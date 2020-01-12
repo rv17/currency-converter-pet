@@ -1,0 +1,8 @@
+{
+    "currencies": [
+        { "code": "usd", "exchangeRatio": 1 },
+        { "code": "eur", "exchangeRatio": 1.15 },
+        { "code": "rub", "exchangeRatio": 0.016 }
+    ],
+    "actualAt": "2020-01-12T00:00:00"
+}
