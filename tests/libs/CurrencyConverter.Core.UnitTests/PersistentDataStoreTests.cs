@@ -1,14 +1,16 @@
+using CurrencyConverter.Core.Models;
+using NSubstitute;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using CurrencyConverter.Core.Models;
-using NUnit.Framework;
 
 namespace CurrencyConverter.Core.UnitTests
 {
-    public class PersistedDataStoreTests
+    public class PersistentDataStoreTests
     {
         #region privates, setup & teardown
+        private IDataProvider _dataProvider;
         private IPersistentDataStore _store;
 
         private ExchangeDataSet TestDataSet => new ExchangeDataSet {
@@ -20,13 +22,25 @@ namespace CurrencyConverter.Core.UnitTests
             ActualAt = DateTime.Parse("2020-01-10")
         };
 
+        private ExchangeDataSet UpdatedDataSet => new ExchangeDataSet {
+            Currencies = new List<Currency> {
+                new Currency { Code = "usd", ExchangeRatio = 1m },
+                new Currency { Code = "eur", ExchangeRatio = 1.14m },
+                new Currency { Code = "rub", ExchangeRatio = 0.0165m },
+            },
+            ActualAt = DateTime.Parse("2020-01-11")
+        };
+
         [SetUp]
         public void BeforeEach() {
-            _store = new PersistentDataStore(TestDataSet);
+            _dataProvider = Substitute.For<IDataProvider>();
+            _dataProvider.LoadExchangeData().Returns(TestDataSet);
+            _store = new PersistentDataStore(_dataProvider);
         }
 
         [TearDown]
         public void AfterEach() {
+            _dataProvider = null;
             _store = null;
         }
         #endregion
@@ -56,6 +70,19 @@ namespace CurrencyConverter.Core.UnitTests
         [TestCase("")]
         public void GetExchangeRatioTest_ReceivesInvalidCurrencyCode_ThrowsArgumentException(string code) {
             Assert.Throws<ArgumentException>(() => _store.GetExchangeRatio(code));
+        }
+
+        [Test]
+        public void RefreshDataTest_UpdatesDataSet() {            
+            const string code = "usd";
+            _dataProvider.LoadExchangeData().Returns(UpdatedDataSet);
+            var expectedUsdRatio = UpdatedDataSet.Currencies.FirstOrDefault(c => c.Code == code)?.ExchangeRatio
+                ?? throw new ArgumentException($"couldn't find currency '{code}' in updated dataset", code);
+            
+            _store.RefreshData();
+
+            var actualUsdRatio = _store.GetExchangeRatio(code);
+            Assert.That(actualUsdRatio, Is.EqualTo(expectedUsdRatio));
         }
     }
 }
