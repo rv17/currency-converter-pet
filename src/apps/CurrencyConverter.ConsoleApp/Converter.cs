@@ -2,6 +2,7 @@ using CurrencyConverter.Core;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,7 +67,7 @@ namespace CurrencyConverter.ConsoleApp
             else if (words[0] == "/l") {
                 Console.WriteLine("This feature is not implemented yet. Sorry for that");
             }
-            else if (decimal.TryParse(words[0], out var value) && words.Length > 2) {
+            else if (decimal.TryParse(words[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && words.Length > 2) {
                 var sourceCurrencyCode = words[1];
                 var targetCurrencyCode = words[2];
 
